@@ -47,6 +47,16 @@ functions:
           path: images/{s3objectkey}
           method: get
           cors: true
+  getImage:
+    handler: handler.getImage
+    description: Download da imagem
+    memorySize: 128
+    timeout: 30
+    events:
+      - http:
+          path: download/images/{s3objectkey}
+          method: get
+          cors: true
 
 resources:
   Resources:

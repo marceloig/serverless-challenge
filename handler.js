@@ -54,7 +54,7 @@ module.exports.extractMetadata = (event, context, callback) => {
 
 module.exports.getMetadata = (event, context, callback) => {  
     const path = event.resource.replace(/\{.+\}/g, '');
-    const s3objectkey = event.path.replace(path, '')
+    const s3objectkey = event.path.replace(path, '');
 
     let params = {
         TableName: process.env.DYNAMODB_TABLE,
@@ -71,6 +71,35 @@ module.exports.getMetadata = (event, context, callback) => {
         else { 
             callback(null, {"statusCode": 200, "body": JSON.stringify(data.Item)});
         }
+    });
+
+};
+
+module.exports.getImage = (event, context, callback) => {  
+    const path = event.resource.replace(/\{.+\}/g, '');
+    const s3objectkey = event.path.replace(path, '');
+
+    let s3Params = {
+        Bucket: 'serverless-challenge-igor', 
+        Key: s3objectkey
+    };
+
+    let response = {
+        statusCode: 200,
+        headers: {'Content-type' : 'image/jpeg'},
+        body: '',
+        isBase64Encoded : true,
+      };
+
+    s3.getObject(s3Params, function(err, data) {
+        if (err) {
+            console.log(err);
+            callback(err, null);
+        } // an error occurred
+        else {
+            response.body = data.Body.toString('base64');
+            callback(null, response);
+        } // successful response
     });
 
 };
