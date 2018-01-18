@@ -48,6 +48,8 @@ module.exports.extractMetadata = (event, context, callback) => {
             } // successful response
         });
     }
+
+    callback(null, {"message": "Success"});
 };
 
 module.exports.getMetadata = (event, context, callback) => {  
