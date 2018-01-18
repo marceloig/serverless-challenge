@@ -1,41 +1,62 @@
 'use strict';
 
 const AWS = require('aws-sdk'); // eslint-disable-line import/no-extraneous-dependencies
+const exif = require('exif-parser');
 const dynamoDb = new AWS.DynamoDB.DocumentClient();
 const s3 = new AWS.S3();
 
 module.exports.extractMetadata = (event, context, callback) => {
-    var params = {
+    const key = event.Records[0].s3.object.key;
+    const bucket = event.Records[0].s3.bucket.name;
+
+    let tableParams = {
         TableName: 'serverless-challenge-dev',
         Item: {
             s3objectkey: '04',
             content_length: 40,
-            date: '1111-01-01'
+            height: 0,
+            width: 0
         }
     };
 
-    params.Item.s3objectkey = event.Records[0].s3.object.key;
-    params.Item.content_length = event.Records[0].s3.object.size;
-
-    dynamoDb.put(params, function (err, data) {
-        if (err) console.log(err);
-        else console.log(data);
-    });
-
-    callback(null, { 'messagem': "Success" });
-};
-
-module.exports.getMetadata = (event, context, callback) => {
-    var response = {
-        "statusCode": 200,
-        "body": "",
-        "isBase64Encoded": false
+    let s3Params = {
+        Bucket: bucket, 
+        Key: key
     };
 
-    var params = {
+    s3.getObject(s3Params, function(err, data) {
+        if (err) {
+            callback(err, null);
+        } // an error occurred
+        else {
+            const parser = exif.create(data.Body);
+            const result = parser.parse();
+            tableParams.Item.s3objectkey = key;
+            tableParams.Item.content_length = data.ContentLength;
+            tableParams.Item.width = result.imageSize.width;
+            tableParams.Item.height = result.imageSize.height;
+
+            dynamoDb.put(tableParams, function (err, data) {
+                if (err) {
+                    console.log(err);
+                    callback(err, null);
+                }
+                else {
+                    callback(null, { 'message': "Success" });
+                }
+            });
+        } // successful response
+    });
+};
+
+module.exports.getMetadata = (event, context, callback) => {  
+    const path = event.resource.replace(/\{.+\}/g, '');
+    const s3objectkey = event.path.replace(path, '')
+
+    let params = {
         TableName: 'serverless-challenge-dev',
         Key: {
-            s3objectkey: event.pathParameters.s3objectkey
+            s3objectkey: s3objectkey
         }
     };
 
@@ -45,8 +66,7 @@ module.exports.getMetadata = (event, context, callback) => {
             callback(err, null);
         }
         else { 
-            response.body = JSON.stringify(data.Item);
-            callback(null, response);
+            callback(null, {"statusCode": 200, "body": JSON.stringify(data.Item)});
         }
     });
 

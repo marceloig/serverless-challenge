@@ -9,6 +9,7 @@ provider:
   region: us-east-1
   environment:
     DYNAMODB_TABLE: ${self:service}-${opt:stage, self:provider.stage}
+    BUCKET: serverless-challenge-igor
   iamRoleStatements:
     - Effect: Allow
       Action:
@@ -19,6 +20,10 @@ provider:
         - dynamodb:UpdateItem
         - dynamodb:DeleteItem
       Resource: "arn:aws:dynamodb:${opt:region, self:provider.region}:*:table/${self:provider.environment.DYNAMODB_TABLE}"
+    - Effect: Allow
+      Action:
+        - s3:GetObject
+      Resource: "arn:aws:s3:::serverless-challenge-igor/*"
 
 functions:
   extractMetadata:
