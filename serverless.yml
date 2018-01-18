@@ -9,7 +9,6 @@ provider:
   region: us-east-1
   environment:
     DYNAMODB_TABLE: ${self:service}-${opt:stage, self:provider.stage}
-    BUCKET: serverless-challenge-igor
   iamRoleStatements:
     - Effect: Allow
       Action:
